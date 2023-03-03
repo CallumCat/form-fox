@@ -1,7 +1,9 @@
 const {
-	confirmVals:STRINGS,
-	confirmReacts:REACTS,
-	numbers:NUMBERS
+	confirmVals: STRINGS,
+	confirmReacts: REACTS,
+	confirmBtns: BUTTONS,
+	numbers: NUMBERS,
+	qTypes: TYPES
 } = require('../common/extras');
 
 module.exports = {
@@ -51,6 +53,7 @@ module.exports = {
 			res(embeds);
 		})
 	},
+
 	paginateEmbeds: async function(bot, m, reaction) {
 		switch(reaction.emoji.name) {
 			case "⬅️":
@@ -59,8 +62,8 @@ module.exports = {
 				} else {
 					this.index -= 1;
 				}
-				await m.edit(this.data[this.index]);
-				if(m.channel.type != "dm") await reaction.users.remove(this.user)
+				await m.edit({embeds: [this.data[this.index].embed ?? this.data[this.index]]});
+				if(m.channel.type != "DM") await reaction.users.remove(this.user)
 				bot.menus[m.id] = this;
 				break;
 			case "➡️":
@@ -69,8 +72,8 @@ module.exports = {
 				} else {
 					this.index += 1;
 				}
-				await m.edit(this.data[this.index]);
-				if(m.channel.type != "dm") await reaction.users.remove(this.user)
+				await m.edit({embeds: [this.data[this.index].embed ?? this.data[this.index]]});
+				if(m.channel.type != "DM") await reaction.users.remove(this.user)
 				bot.menus[m.id] = this;
 				break;
 			case "⏹️":
@@ -79,22 +82,8 @@ module.exports = {
 				break;
 		}
 	},
-	cleanText: function(text){
-		if (typeof(text) === "string") {
-			return text.replace(/`/g, "`" + String.fromCharCode(8203)).replace(/@/g, "@" + String.fromCharCode(8203));
-		} else	{
-			return text;
-		}
-	},
 
-	checkPermissions: async (bot, msg, cmd)=>{
-		return new Promise((res)=> {
-			if(cmd.permissions) res(msg.member.permissions.has(cmd.permissions))
-			else res(true);
-		})
-	},
-
-	getConfirmation: async (bot, msg, user) => {
+	getConfirmation: async (bot, msg, user, choices) => {
 		return new Promise(res => {
 
 			function msgListener(message) {
@@ -102,8 +91,22 @@ module.exports = {
 				   message.author.id != user.id) return;
 
 				clearTimeout(timeout);
-				bot.removeListener('message', msgListener);
+				bot.removeListener('messageCreate', msgListener);
 				bot.removeListener('messageReactionAdd', reactListener);
+				bot.removeListener('interactionCreate', intListener)
+
+				if(msg.components?.[0]) {
+					msg.edit({
+						components: [{
+							type: 1,
+							components: msg.components[0].components.map(({data: b}) => ({
+								...b,
+								disabled: true
+							}))
+						}]
+					})
+				}
+
 				if(STRINGS[0].includes(message.content.toLowerCase())) return res({confirmed: true, message});
 				else return res({confirmed: false, message, msg: 'Action cancelled!'});
 			}
@@ -113,130 +116,198 @@ module.exports = {
 				   ruser.id != user.id) return;
 
 				clearTimeout(timeout);
-				bot.removeListener('message', msgListener);
+				bot.removeListener('messageCreate', msgListener);
 				bot.removeListener('messageReactionAdd', reactListener);
+				bot.removeListener('interactionCreate', intListener)
+
+				if(msg.components?.[0]) {
+					msg.edit({
+						components: [{
+							type: 1,
+							components: msg.components[0].components.map(({data: b}) => ({
+								...b,
+								disabled: true
+							}))
+						}]
+					})
+				}
+
 				if(react.emoji.name == REACTS[0]) return res({confirmed: true, react});
 				else return res({confirmed: false, react, msg: 'Action cancelled!'});
 			}
 
-			const timeout = setTimeout(async () => {
-				bot.removeListener('message', msgListener);
+			function intListener(intr) {
+				if(!intr.isButton()) return;
+				if(intr.channelId !== msg.channel.id ||
+				   intr.user.id !== user.id) return;
+
+				clearTimeout(timeout);
+				bot.removeListener('messageCreate', msgListener);
 				bot.removeListener('messageReactionAdd', reactListener);
+				bot.removeListener('interactionCreate', intListener);
+
+				intr.update({
+					components: [{
+						type: 1,
+						components: intr.message.components[0].components.map(({data: b}) => ({
+							...b,
+							disabled: true
+						}))
+					}]
+				})
+				
+				if(BUTTONS[0].includes(intr.customId)) return res({confirmed: true, interaction: intr});
+				else return res({confirmed: false, interaction: intr, msg: 'Action cancelled!'});
+			}
+
+			const timeout = setTimeout(async () => {
+				bot.removeListener('messageCreate', msgListener);
+				bot.removeListener('messageReactionAdd', reactListener);
+				bot.removeListener('interactionCreate', intListener)
 				res({confirmed: false, msg: 'ERR! Timed out!'})
 			}, 30000);
 
-			bot.on('message', msgListener);
+			bot.on('messageCreate', msgListener);
 			bot.on('messageReactionAdd', reactListener);
+			bot.on('interactionCreate', intListener)
 		})
 	},
-	awaitMessage: async (bot, msg, user) => {
+
+	getChoice: async (bot, msg, user, time, update = true) => {
+		return new Promise(res => {
+			function intListener(intr) {
+				if(!intr.isButton()) return;
+				if(intr.channelId !== msg.channel.id ||
+				   intr.user.id !== user.id) return;
+
+				clearTimeout(timeout);
+				bot.removeListener('interactionCreate', intListener);
+
+				if(update) {
+					intr.update({
+						components: [{
+							type: 1,
+							components: intr.message.components[0].components.map(({data: b}) => ({
+								...b,
+								disabled: true
+							}))
+						}]
+					})
+				} else {
+					intr.message.edit({
+						components: [{
+							type: 1,
+							components: intr.message.components[0].components.map(({data: b}) => ({
+								...b,
+								disabled: true
+							}))
+						}]	
+					})
+				}
+				
+				return res({choice: intr.customId, interaction: intr});
+			}
+
+			const timeout = setTimeout(async () => {
+				bot.removeListener('interactionCreate', intListener)
+				res({choice: undefined, msg: 'ERR! Timed out!'})
+			}, time ?? 30_000);
+
+			bot.on('interactionCreate', intListener)
+		})
+	},
+
+	awaitMessage: async (bot, msg, user, time) => {
 		return new Promise(res => {
 			function msgListener(message) {
 				if(message.channel.id != msg.channel.id ||
 				   message.author.id != user.id) return;
 
-				bot.removeListener('message', msgListener);
+				bot.removeListener('messageCreate', msgListener);
+				clearTimeout(timeout);
 				return res(message)
 			}
 
-			bot.on('message', msgListener);
+			const timeout = setTimeout(async () => {
+				bot.removeListener('messageCreate', msgListener);
+				res('ERR! Timed out!')
+			}, time ?? 30000);
+
+			bot.on('messageCreate', msgListener);
 		})
 	},
 
-	handleQuestion: async (data, number) => {
-    	var questions = data.questions?.[0] ? data.questions : data.form.questions;
-    	var current = questions[number];
-    	if(!current) return Promise.resolve(undefined);
+	awaitSelection: async (ctx, choices, msg, options = {min_values: 1, max_values: 1, placeholder: '- - -'}) => {
+		var components = [{
+			type: 3,
+			custom_id: 'selector',
+			options: choices,
+			...options
+		}]
 
-    	var question = {};
+		var reply;
+		if(ctx.replied || ctx.deferred) {
+			reply = await ctx.followUp({
+				content: msg,
+				components: [{
+					type: 1,
+					components
+				}]
+			});
+		} else {
+			reply = await ctx.reply({
+				content: msg,
+				components: [{
+					type: 1,
+					components
+				}],
+				fetchReply: true
+			});
+		}
 
-    	switch(current.type) {
-    		case 'mc':
-    		case 'cb':
-    			question.message = [
-    				{
-    					name: `Question ${number + 1}${current.required ? ' (required)' : ''}`,
-    					value: current.value
-    				},
-    				...current.choices.map((c, i) => {
-    					return {name: `Option ${NUMBERS[i + 1]}`, value: c}
-    				})
-    			]
+		try {
+			var resp = await reply.awaitMessageComponent({
+				filter: (intr) => intr.user.id == ctx.user.id && intr.customId == 'selector',
+				time: 60000
+			});
+		} catch(e) { }
+		if(!resp) return 'Nothing selected!';
+		await resp.update({
+			components: [{
+				type: 1,
+				components: components.map(c => ({
+					...c,
+					disabled: true,
+					options: choices.map(ch => ({...ch, default: resp.values.includes(ch.value)}))
+				}))
+			}]
+		});
 
-    			if(current.other) question.message.push({name: 'Other', value: 'Enter a custom response (react with 🅾️ or type "other")'})
+		return resp.values;
+	},
 
-    			question.reacts = [
-    				...NUMBERS.slice(1, current.choices.length + 1),
-    				(current.other ? '🅾️' : null),
-    				(current.type == 'cb' ? '✏️' : null),
-    				'❌'
-    			].filter(x => x!=null);
+	async awaitModal(ctx, data, user, ephemeral = false, time = 30_000) {
+		return new Promise(async res => {
+			await ctx.showModal(data);
+			
+			async function modListener(m) {
+				if(!m.isModalSubmit()) return;
+				if(!(m.customId == data.custom_id &&
+					m.user.id == user.id))
+					return;
 
-    			question.footer = {text:
-    				'react or type the respective emoji/character to choose an option! ' +
-    				(current.type == 'cb' ? 'react with ✏️ or type "select" to confirm selected choices! ' : '') +
-    				'react with ❌ or type "cancel" to cancel.'
-                }
-    			break;
-    		case 'num':
-    			question.message = [
-    				{
-    					name: `Question ${number + 1}${current.required ? ' (required)' : ''}`,
-    					value: current.value
-    				}
-    			]
+				clearTimeout(timeout);
+				ctx.client.removeListener('interactionCreate', modListener);
 
+				await m.deferReply({ephemeral});
+				res(m);
+			}
 
-    			question.reacts = ['❌']
-
-    			question.footer = {text:
-    				'you can only respond with numbers for this question! ' +
-                    'react with ❌ or type "cancel" to cancel.'
-                }
-    			break;
-    		case 'dt':
-    			question.message = [
-    				{
-    					name: `Question ${number + 1}${current.required ? ' (required)' : ''}`,
-    					value: current.value
-    				}
-    			]
-
-
-    			question.reacts = ['❌']
-
-    			question.footer = {text:
-    				'you can only respond with a date for this question! ' +
-                    'react with ❌ or type "cancel" to cancel.'
-                }
-    			break;
-    		default:
-    			question.message = [
-    				{
-    					name: `Question ${number + 1}${current.required ? ' (required)' : ''}`,
-    					value: current.value
-    				}
-    			]
-
-
-    			question.reacts = ['❌']
-
-    			question.footer = {text:
-                    'react with ❌ or type "cancel" to cancel.'
-                }
-    			break;
-    	}
-
-    	if(!current.required) {
-    		if(!questions.find((x, i) => x.required && i > number)) {
-    			question.footer.text += ' react with ✅ or type "submit" to finish early.';
-    			question.reacts.push('✅');
-    		}
-
-    		question.footer.text += ' react with ➡️ or type "skip" to skip this question!';
-    		question.reacts.push('➡️');
-    	}
-
-    	return question
-    }
+			ctx.client.on("interactionCreate", modListener);
+			const timeout = setTimeout(async () => {
+				ctx.client.removeListener('interactionCreate', modListener)
+				res()
+			}, time);
+		})
+	}
 }

@@ -5,6 +5,16 @@ Form Fox, or just Fox, is our take on a Disord application bot. They handle ever
 
 The bot's default prefix is `ff!`, and you can get help with anything you need with `ff!h`.
 
+## Getting Started
+You can invite Form Fox with [this link](https://discord.com/oauth2/authorize?client_id=737192331241062462&permissions=268561472&scope=bot). Once you've got the bot in your server, you should:
+- Create a form with `ff!create`
+- Post that form to a channel with `ff!post`, or bind it to an existing message with `ff!bind`
+- Set a response channel globally or local to that form with `ff!channel`
+- React to the post from before, or use `ff!apply` to open a response
+- Finish the response to make sure everything's working
+
+You're all set! The bot should now function properly.
+
 ## Features
 ### Several question types
 Form Fox currently offers several different types of questions, specifically:
@@ -45,3 +55,6 @@ This also applies to bot restarts. Your data will be saved as soon as you answer
 [support server](https://discord.gg/EvDmXGt)  
 [our patreon](https://patreon.com/greysdawn)  
 [our ko-fi](https://ko-fi.com/greysdawn)
+
+### Commissions
+We do commissions! If you're interested in a bot or website, check out [this doc](https://docs.google.com/document/d/1hvqvqdWj0mpHeNjo_mr2AHF7La32nkp4BDLxO1dvTHw/edit?usp=drivesdk) for more info!

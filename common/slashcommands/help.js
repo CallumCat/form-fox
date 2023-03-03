@@ -35,8 +35,8 @@ class Command extends SlashCommand {
 		var cmds;
 		if(!cn) {
 			embeds = [{
-				title: "Eee! I'm Fox!",
-				description: "I help you make and manage forms here on discord! Here are some of my features:",
+				title: "Eee! I'm Furry Castle Applications!",
+				description: "I help Furry Castle admins make and manage applications! Here are some of my features:",
 				fields: [
 					{
 						name: 'Reaction-based interaction',
@@ -76,18 +76,6 @@ class Command extends SlashCommand {
 							"For example, you can automatically give users an `Adult` " +
 							"role if they answer your form's age question with a " +
 							"number over 18"
-					},
-					{
-						name: "Need help? Join the support server!",
-						value: "[https://discord.gg/EvDmXGt](https://discord.gg/EvDmXGt)",
-						inline: true
-					},
-					{
-						name: "Support my creators!",
-						value: 
-							"[Patreon](https://patreon.com/greysdawn) | " +
-							"[Ko-fi](https://ko-fi.com/greysdawn)",
-						inline: true
 					}
 				],
 				color: 0xee8833,

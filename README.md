@@ -45,20 +45,11 @@ In-progress responses are saved for easy access later. Respond whenever you want
 This also applies to bot restarts. Your data will be saved as soon as you answer a question, and will be accessed again when you answer another one. No more losing responses because of bot crashes.
 
 ## Self hosting
-### Requirements
-**Node:** version 14.0 or higher  
-**Database:** For the master branch: PostgreSQL with any version, local or otherwise; for sqlite branch: SQLite 3  
-**Tech:** You'll want some form of hosting computer, be it a VPS in the cloud or a computer that's always online. **This bot isn't likely to work with REPL.**  
-You should also have a basic understanding of Node, Postgres, and JavaScript, especially if you plan to make changes.
-
-### Steps
-(Assuming you have all the requirements set up)
-1. Download this repository and unzip (if applicable) to wherever you want it
-2. Open a terminal in the root folder and use `npm i` to install dependencies
-3. Copy the `.env.example` rename it to `.env`. Fill it with the correct values
-4. Use `node bot/bot` to run the bot
-
-The bot should now be online and accepting commands :)
+1. Make sure you've got SQLite installed/downloaded (`sudo apt install sqlite3` or [download sqlite-tools from here](https://www.sqlite.org/download.html) and add extracted folder to PATH)
+2. Make sure you have Node installed; use `npm install` in the root folder
+3. Copy and rename `.env.example` to `.env`; fill it out with the correct info
+4. Run `node bot/bot` from the root folder
+5. Profit
 
 ## Support and Links
 [support server](https://discord.gg/EvDmXGt)  
